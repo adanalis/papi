@@ -198,6 +198,8 @@ int
 rocp_sdk_init_private(void)
 {
     int papi_errno = PAPI_OK;
+printf("rocp_sdk: rocp_sdk_init_private().\n");
+fflush(stdout);
 
     _papi_hwi_lock(COMPONENT_LOCK);
 
@@ -206,9 +208,11 @@ rocp_sdk_init_private(void)
         goto fn_exit;
     }
 
-    papi_errno = check_for_available_devices(_rocp_sdk_vector.cmp_info.disabled_reason);
-    if (papi_errno != PAPI_OK) {
-        goto fn_fail;
+    if( NULL == getenv("PAPI_ROCP_SDK_SKIP_HSA") ){
+        papi_errno = check_for_available_devices(_rocp_sdk_vector.cmp_info.disabled_reason);
+        if (papi_errno != PAPI_OK) {
+            goto fn_fail;
+        }
     }
 
     papi_errno = rocprofiler_sdk_init();
@@ -246,6 +250,7 @@ rocp_sdk_shutdown_component(void)
     if (rocm_dlp != NULL) {
         dlclose(rocm_dlp);
     }
+
     return rocprofiler_sdk_shutdown();
 }
 
@@ -477,6 +482,8 @@ check_n_initialize(void)
 int
 check_for_available_devices(char *err_msg)
 {
+printf("rocp_sdk: check_for_available_devices().\n");
+fflush(stdout);
     if( PAPI_OK != load_hsa_sym(err_msg) ){
         return PAPI_EMISC;
     }
@@ -551,6 +558,8 @@ load_hsa_sym( char *err_msg )
         return PAPI_EMISC;
     }
     if ( (*hsa_initPtr)() ) {
+printf("rocp_sdk: hsa_init() failed.\n");
+fflush(stdout);
         const char *message = "hsa_init() failed. Possibly no AMD GPUs present.";
         int count = snprintf(err_msg, PAPI_MAX_STR_LEN, "%s", message);
         if (count >= PAPI_MAX_STR_LEN) {
@@ -558,6 +567,9 @@ load_hsa_sym( char *err_msg )
         }
         return PAPI_EMISC;
     }
+printf("rocp_sdk: hsa_init() success.\n");
+fflush(stdout);
+
 
     return PAPI_OK;
 }
@@ -565,8 +577,11 @@ load_hsa_sym( char *err_msg )
 int
 unload_hsa_sym( void )
 {
-    if (hsa_is_enabled())
+    if (hsa_is_enabled()){
         (*hsa_shut_downPtr)();
+printf("rocp_sdk: hsa_shut_down()\n");
+fflush(stdout);
+}
 
     hsa_initPtr           = NULL;
     hsa_shut_downPtr      = NULL;

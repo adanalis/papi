@@ -28,6 +28,9 @@ kernel.o: kernel.cpp
 simple: simple.o kernel.o
 	$(AMDCXX) -O2 -g -DNDEBUG $(GPUFLAGS) simple.o kernel.o -o simple $(LDFLAGS)
 
+simple_dyn: simple.o kernel.o
+	$(AMDCXX) -O2 -g -DNDEBUG $(GPUFLAGS) simple.o kernel.o -o simple_dyn -L../../../ -lpapi $(TESTLIB) -ldl
+
 advanced: advanced.o kernel.o
 	$(AMDCXX) -O2 -g -DNDEBUG $(GPUFLAGS) advanced.o kernel.o -o advanced $(LDFLAGS)
 

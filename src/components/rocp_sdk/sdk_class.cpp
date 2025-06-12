@@ -194,6 +194,8 @@ obtain_function_pointers()
         ret_val = NULL;
         goto fn_exit;
     }
+printf("rocp_sdk: obtain_function_pointers()\n");
+fflush(stdout);
 
     pathname = std::getenv("PAPI_ROCP_SDK_LIB");
 
@@ -509,6 +511,8 @@ buffered_callback(rocprofiler_context_id_t,
 int
 tool_init(rocprofiler_client_finalize_t fini_func, void* tool_data)
 {
+printf("rocp_sdk: tool_init()\n");
+fflush(stdout);
     assert(tool_data != nullptr);
 
     // Obtain the list of available (GPU) agents.
@@ -648,6 +652,7 @@ start_counting(vendorp_ctx_t ctx){
     ROCPROFILER_CALL(rocprofiler_start_context_FPTR(get_client_ctx()), "start context");
 }
 
+
 /* ** */
 int
 read_sample(){
@@ -666,6 +671,9 @@ read_sample(){
                 output_records, &rec_count);
 
     if( ret_val != ROCPROFILER_STATUS_SUCCESS ){
+        printf("### ERROR in rocp_sdk - read_sample() - rocprofiler_sample_device_counting_service(): %d\n", ret_val);
+        fflush(stdout);
+
         papi_errno = PAPI_ECMP;
         goto fn_fail;
     }
@@ -1040,6 +1048,8 @@ void tool_fini(void* tool_data) {
 /* ** */
 int setup() {
     int status = 0;
+printf("rocp_sdk: setup()\n");
+fflush(stdout);
 
     // Set sampling as the default mode and allow the users to change this
     // behavior by setting the environment variable PAPI_ROCP_SDK_DISPATCH_MODE
@@ -1082,6 +1092,8 @@ extern "C" int
 rocprofiler_sdk_init(void)
 {
     int papi_errno=PAPI_OK;
+printf("rocp_sdk: rocprofiler_sdk_init()\n");
+fflush(stdout);
 
     if( papi_rocpsdk::setup() ){
         papi_errno = PAPI_ECMP;
@@ -1320,6 +1332,8 @@ rocprofiler_configure(uint32_t                 version,
                       uint32_t                 priority,
                       rocprofiler_client_id_t* id)
 {
+printf("rocp_sdk: rocprofiler_configure()\n");
+fflush(stdout);
     const char *error_msg = papi_rocpsdk::obtain_function_pointers();
 
     if( NULL != error_msg ){
