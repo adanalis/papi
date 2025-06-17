@@ -534,20 +534,35 @@ void *dlopen_from_paths( char *libname, int pathCount, const char *paths[] )
 static int
 load_hsa_sym( char *err_msg )
 {
-    const char *paths[] = {getenv("PAPI_ROCP_SDK_ROOT"), getenv("PAPI_ROCM_ROOT")};
-    rocm_dlp = dlopen_from_paths("libhsa-runtime64.so", 2, paths);
-    if (rocm_dlp == NULL) {
-        int count = snprintf(err_msg, PAPI_MAX_STR_LEN, "%s", dlerror());
-        if (count >= PAPI_MAX_STR_LEN) {
-            SUBDBG("Status string truncated.");
-        }
-        return PAPI_EMISC;
-    }
+printf("rocp_sdk: Looking for existing HSA symbols.\n");
+fflush(stdout);
+    // Try to find the hsa symbols in a library already loaded by the executable.
+    rocm_dlp = dlopen(NULL, RTLD_NOW | RTLD_GLOBAL);
 
     hsa_initPtr           = dlsym(rocm_dlp, "hsa_init");
     hsa_shut_downPtr      = dlsym(rocm_dlp, "hsa_shut_down");
     hsa_iterate_agentsPtr = dlsym(rocm_dlp, "hsa_iterate_agents");
     hsa_agent_get_infoPtr = dlsym(rocm_dlp, "hsa_agent_get_info");
+
+    if ( !hsa_is_enabled() ){
+printf("rocp_sdk: Didn't find HSA symbols. Loading libhsa-runtime64.so\n");
+fflush(stdout);
+        // If the hsa library is not already loaded, try to find it based on the user vars.
+        const char *paths[] = {getenv("PAPI_ROCP_SDK_ROOT"), getenv("PAPI_ROCM_ROOT")};
+        rocm_dlp = dlopen_from_paths("libhsa-runtime64.so", 2, paths);
+        if (rocm_dlp == NULL) {
+            int count = snprintf(err_msg, PAPI_MAX_STR_LEN, "%s", dlerror());
+            if (count >= PAPI_MAX_STR_LEN) {
+                SUBDBG("Status string truncated.");
+            }
+            return PAPI_EMISC;
+        }
+
+        hsa_initPtr           = dlsym(rocm_dlp, "hsa_init");
+        hsa_shut_downPtr      = dlsym(rocm_dlp, "hsa_shut_down");
+        hsa_iterate_agentsPtr = dlsym(rocm_dlp, "hsa_iterate_agents");
+        hsa_agent_get_infoPtr = dlsym(rocm_dlp, "hsa_agent_get_info");
+    } 
 
     if ( !hsa_is_enabled() ){
         const char *message = "dlsym() of HSA symbols failed.";

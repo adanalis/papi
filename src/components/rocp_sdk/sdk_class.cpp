@@ -180,6 +180,34 @@ get_profiling_mode(void)
     return rpsdk_profiling_mode;
 }
 
+char *load_symbols(void *dllHandle){
+    DLL_SYM_CHECK(rocprofiler_flush_buffer, rocprofiler_flush_buffer_t);
+    DLL_SYM_CHECK(rocprofiler_sample_device_counting_service, rocprofiler_sample_device_counting_service_t);
+    DLL_SYM_CHECK(rocprofiler_configure_callback_dispatch_counting_service, rocprofiler_configure_callback_dispatch_counting_service_t);
+    DLL_SYM_CHECK(rocprofiler_configure_device_counting_service, rocprofiler_configure_device_counting_service_t);
+    DLL_SYM_CHECK(rocprofiler_create_context, rocprofiler_create_context_t);
+    DLL_SYM_CHECK(rocprofiler_create_buffer, rocprofiler_create_buffer_t);
+    DLL_SYM_CHECK(rocprofiler_start_context, rocprofiler_start_context_t);
+    DLL_SYM_CHECK(rocprofiler_stop_context, rocprofiler_stop_context_t);
+    DLL_SYM_CHECK(rocprofiler_context_is_valid, rocprofiler_context_is_valid_t);
+    DLL_SYM_CHECK(rocprofiler_context_is_active, rocprofiler_context_is_active_t);
+    DLL_SYM_CHECK(rocprofiler_create_profile_config, rocprofiler_create_profile_config_t);
+    DLL_SYM_CHECK(rocprofiler_force_configure, rocprofiler_force_configure_t);
+    DLL_SYM_CHECK(rocprofiler_get_status_string, rocprofiler_get_status_string_t);
+    DLL_SYM_CHECK(rocprofiler_get_thread_id, rocprofiler_get_thread_id_t);
+    DLL_SYM_CHECK(rocprofiler_is_finalized, rocprofiler_is_finalized_t);
+    DLL_SYM_CHECK(rocprofiler_is_initialized, rocprofiler_is_initialized_t);
+    DLL_SYM_CHECK(rocprofiler_iterate_agent_supported_counters, rocprofiler_iterate_agent_supported_counters_t);
+    DLL_SYM_CHECK(rocprofiler_iterate_counter_dimensions, rocprofiler_iterate_counter_dimensions_t);
+    DLL_SYM_CHECK(rocprofiler_query_available_agents, rocprofiler_query_available_agents_t);
+    DLL_SYM_CHECK(rocprofiler_query_counter_info, rocprofiler_query_counter_info_t);
+    DLL_SYM_CHECK(rocprofiler_query_counter_instance_count, rocprofiler_query_counter_instance_count_t);
+    DLL_SYM_CHECK(rocprofiler_query_record_counter_id, rocprofiler_query_record_counter_id_t);
+    DLL_SYM_CHECK(rocprofiler_query_record_dimension_position, rocprofiler_query_record_dimension_position_t);
+
+    return NULL;
+}
+
 /* ** */
 static const char *
 obtain_function_pointers()
@@ -196,6 +224,14 @@ obtain_function_pointers()
     }
 printf("rocp_sdk: obtain_function_pointers()\n");
 fflush(stdout);
+
+    dllHandle = dlopen(NULL, RTLD_NOW | RTLD_GLOBAL);
+    ret_val = load_symbols(dllHandle);
+    if( NULL == ret_val ){
+printf("rocp_sdk:   Found librocprofiler-sdk.so symbols already loaded.\n");
+fflush(stdout);
+        goto fn_exit;
+    }
 
     pathname = std::getenv("PAPI_ROCP_SDK_LIB");
 
@@ -243,6 +279,7 @@ fflush(stdout);
         }
     }
 
+/*
     DLL_SYM_CHECK(rocprofiler_flush_buffer, rocprofiler_flush_buffer_t);
     DLL_SYM_CHECK(rocprofiler_sample_device_counting_service, rocprofiler_sample_device_counting_service_t);
     DLL_SYM_CHECK(rocprofiler_configure_callback_dispatch_counting_service, rocprofiler_configure_callback_dispatch_counting_service_t);
@@ -266,8 +303,14 @@ fflush(stdout);
     DLL_SYM_CHECK(rocprofiler_query_counter_instance_count, rocprofiler_query_counter_instance_count_t);
     DLL_SYM_CHECK(rocprofiler_query_record_counter_id, rocprofiler_query_record_counter_id_t);
     DLL_SYM_CHECK(rocprofiler_query_record_dimension_position, rocprofiler_query_record_dimension_position_t);
+*/
+    ret_val = load_symbols(dllHandle);
+    if( NULL != ret_val ){
+        goto fn_fail;
+    }
 
     fn_exit:
+printf("rocp_sdk: obtain_function_pointers() EXIT\n");
       // Make sure we don't run this code multiple times.
       first_time = false;
       return ret_val;
@@ -438,12 +481,15 @@ dispatch_callback(rocprofiler_dispatch_counting_service_data_t dispatch_data,
     // existing config from the cache they can all do this at the same
     // time. If there is nothing in the cache, they will exit this scope
     // and the lock will be automatically released.
+printf("--> rocp_sdk: dispatch_callback()\n");
+fflush(stdout);
     const SHARED_LOCK rlock(profile_cache_mutex);
 
     auto pos = rpsdk_profile_cache.find(dispatch_data.dispatch_info.agent_id.handle);
     if( rpsdk_profile_cache.end() != pos ){
         *config = pos->second;
     }
+printf("--> rocp_sdk: dispatch_callback() EXIT\n");
     return;
 
 }
@@ -542,6 +588,8 @@ fflush(stdout);
                          "Could not setup callback dispatch");
     }
 
+printf("rocp_sdk: tool_init() EXIT\n");
+fflush(stdout);
     return 0;
 }
 
@@ -1071,6 +1119,7 @@ fflush(stdout);
         ROCPROFILER_CALL(rocprofiler_force_configure_FPTR(&rocprofiler_configure), "force configuration");
     }
 
+printf("rocp_sdk: setup() EXIT\n");
     return PAPI_OK;
 
   fn_fail:
@@ -1102,6 +1151,7 @@ fflush(stdout);
 
     papi_rocpsdk::populate_event_list();
 
+printf("rocp_sdk: rocprofiler_sdk_init() EXIT\n");
   fn_exit:
     return papi_errno;
   fn_fail:
@@ -1357,6 +1407,7 @@ fflush(stdout);
                           static_cast<void*>(client_tool_data)
                       };
 
+printf("rocp_sdk: rocprofiler_configure() EXIT\n");
     // return pointer to configure data
     return &cfg;
 }

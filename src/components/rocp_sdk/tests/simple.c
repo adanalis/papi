@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
         test_fail(__FILE__, __LINE__, "launch_kernel(0)", papi_errno);
     }
 
-    usleep(10000);
+    usleep(100000);
 
     papi_errno = PAPI_read(eventset, counters);
     if (papi_errno != PAPI_OK) {

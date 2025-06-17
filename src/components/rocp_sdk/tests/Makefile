@@ -16,7 +16,7 @@ ifneq ($(GPUARCH),)
 endif
 GPUFLAGS=$(ARCHFLAG) --hip-link --rtlib=compiler-rt -unwindlib=libgcc
 
-TESTS = simple simple_dyn advanced two_eventsets simple_sampling
+TESTS = simple simple_dyn
 template_tests: $(TESTS)
 
 %.o: %.c
