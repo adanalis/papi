@@ -3,6 +3,8 @@
 #include <papi.h>
 #include <papi_test.h>
 #include "rocprofiler-sdk/hsa.h"
+#include <hip/hip_runtime.h>
+
 
 extern int launch_kernel(int device_id);
 
@@ -21,6 +23,11 @@ int main(int argc, char *argv[])
         "rocp_sdk:::SQ_BUSY_CYCLES:device=0:DIMENSION_INSTANCE=0:DIMENSION_SHADER_ENGINE=2",
         "rocp_sdk:::SQ_BUSY_CYCLES:device=0:DIMENSION_INSTANCE=0"
     };
+
+    int dev_count;
+    if (hipInit(0) != hipSuccess){
+        fprintf(stderr,"hipInit() returned an error.\n");
+    }
 
     papi_errno = PAPI_library_init(PAPI_VER_CURRENT);
     if (papi_errno != PAPI_VER_CURRENT) {

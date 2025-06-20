@@ -3,6 +3,8 @@
 #include <papi.h>
 #include <papi_test.h>
 #include "rocprofiler-sdk/hsa.h"
+#include <hip/hip_runtime.h>
+
 
 extern int launch_kernel(int device_id);
 
@@ -25,6 +27,11 @@ int main(int argc, char *argv[])
     papi_errno = PAPI_library_init(PAPI_VER_CURRENT);
     if (papi_errno != PAPI_VER_CURRENT) {
         test_fail(__FILE__, __LINE__, "PAPI_library_init", papi_errno);
+    }
+
+    int dev_count;
+    if (hipInit(0) != hipSuccess){
+        fprintf(stderr,"hipInit() returned an error.\n");
     }
 
     int eventset = PAPI_NULL;

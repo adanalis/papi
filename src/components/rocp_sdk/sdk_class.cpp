@@ -561,6 +561,10 @@ printf("rocp_sdk: tool_init()\n");
 fflush(stdout);
     assert(tool_data != nullptr);
 
+    if( NULL != getenv("PAPI_ROCP_SDK_DISPATCH_MODE") ){
+        rpsdk_profiling_mode = RPSDK_MODE_DISPATCH;
+    }
+
     // Obtain the list of available (GPU) agents.
     gpu_agents = get_GPU_agent_info();
 
@@ -583,6 +587,7 @@ fflush(stdout);
                              "Could not setup sampling");
         }
     }else{
+printf("rocp_sdk: tool_init() ### configuring dispatch mode ###\n");
         ROCPROFILER_CALL(rocprofiler_configure_callback_dispatch_counting_service_FPTR(
                              get_client_ctx(), dispatch_callback, tool_data, record_callback, tool_data),
                          "Could not setup callback dispatch");
